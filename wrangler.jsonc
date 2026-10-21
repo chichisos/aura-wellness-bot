@@ -1,6 +1,6 @@
 {
   // AURA Wellness Studio — Telegram-бот на Cloudflare Workers (webhook).
-  "name": "aura-wellness-bot",
+  "name": "raspy-hall-8b2c",
   "main": "src/index.ts",
   "compatibility_date": "2025-06-01",
   "workers_dev": true,
