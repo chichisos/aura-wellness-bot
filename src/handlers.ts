@@ -243,6 +243,12 @@ export async function handleCallback(
 	}
 
 	if (data === "menu:team") {
+		await sendPhoto(
+			env,
+			chatId,
+
+			"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611575.jpg"
+			);
 		await editMessageText(
 			env,
 			chatId,
@@ -259,6 +265,12 @@ export async function handleCallback(
 				PROMOS.flatMap((p) => [`<b>${esc(p.title)}</b>`, esc(p.text), ""]),
 			)
 			.join("\n");
+		await sendPhoto(
+			env,
+			chatId,
+			"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611574.jpg"
+			);
+		
 		await editMessageText(env, chatId, messageId, text, promosKeyboard());
 		return;
 	}
@@ -329,6 +341,21 @@ export async function handleCallback(
 
 	if (data.startsWith("cat:")) {
 		const categoryId = data.slice(4);
+		const categoryImages: Record<string, string> = {
+		massage: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611571.jpg",
+		spa: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611570.jpg",
+		face: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611573.jpg",
+		body: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611572.jpg"
+		};
+const categoryImage = categoryImages[categoryId];
+
+if (categoryImage) {
+await sendPhoto(
+env,
+chatId,
+categoryImage,
+);
+}
 		const list = servicesByCategory(categoryId);
 		if (list.length === 0) {
 			await editMessageText(
