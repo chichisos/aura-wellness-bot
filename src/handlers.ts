@@ -79,12 +79,12 @@ export async function handleMessage(env: Env, msg: TgMessage): Promise<void> {
 		env,
 		chatId,
 		"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611569.jpg",
-		Добро пожаловать в AURA Wellness Studio 🤍
+		"Добро пожаловать в AURA Wellness Studio 🤍\n\nПространство восстановления, ухода и заботы о себе.\n\nЗдесь вы можете посмотреть услуги, выбрать специалиста, записаться на удобное время или задать вопрос администратору."
+);
 
-		Пространство восстановления, ухода и заботы о себе.
-
-		Здесь вы можете посмотреть услуги, выбрать специалиста, записаться на удобное время или задать вопрос администратору.
-	);
+await showMainMenu(env, chatId);
+return;
+}
 
 await showMainMenu(env, chatId);
 return;
