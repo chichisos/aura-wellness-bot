@@ -86,9 +86,6 @@ await showMainMenu(env, chatId);
 return;
 }
 
-await showMainMenu(env, chatId);
-return;
-}
 	const state = await getState(env, userId);
 
 	if (state.step === "await_name") {
