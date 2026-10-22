@@ -37,6 +37,7 @@ import {
 	editMessageText,
 	esc,
 	sendMessage,
+	sendPhoto,
 } from "./telegram";
 import type { Env, TgCallbackQuery, TgMessage } from "./types";
 
