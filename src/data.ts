@@ -24,8 +24,7 @@ export interface FaqItem {
 export const STUDIO_NAME = "AURA Wellness Studio";
 
 export const WELCOME_TEXT =
-	"Добро пожаловать в AURA — пространство восстановления, ухода и заботы о себе.\n" +
-	"Выберите, чем мы можем помочь.";
+	"Выберите нужный раздел ниже";
 
 export const CATEGORIES: { id: string; title: string }[] = [
 	{ id: "massage", title: "Массаж" },
