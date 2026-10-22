@@ -72,20 +72,31 @@ export function esc(text: string): string {
 }
 
 export async function sendPhoto(
-env: Env,
-chatId: number,
-photo: string,
-caption?: string,
-extra: Record<string, any> = {}
+	env: Env,
+	chatId: number,
+	photo: string,
+	caption?: string,
+	extra: Record<string, any> = {}
 ) {
-return fetch(https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto, {
-method: "POST",
-headers: { "Content-Type": "application/json" },
-body: JSON.stringify({
-chat_id: chatId,
-photo,
-caption,
-...extra,
-}),
-});
+	const response = await fetch(
+	"https://api.telegram.org/bot" + env.BOT_TOKEN + "/sendPhoto",
+{
+		method: "POST",
+		headers: { "Content-Type": "application/json" },
+		body: JSON.stringify({
+		chat_id: chatId,
+		photo: photo,
+		caption: caption,
+		...extra
+})
+}
+);
+
+	const data = await response.json();
+
+	if (!response.ok) {
+	throw new Error("sendPhoto failed: " + JSON.stringify(data));
+}
+
+return data;
 }
