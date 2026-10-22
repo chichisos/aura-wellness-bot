@@ -78,7 +78,7 @@ export async function handleMessage(env: Env, msg: TgMessage): Promise<void> {
 		await sendPhoto(
 		env,
 		chatId,
-		"https://github.com/chichisos/aura-wellness-bot/blob/5c92fba13817ff7614578463fda013c910d90b54/5393427297198611569.jpg",
+		"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611569.jpg",
 		Добро пожаловать в AURA Wellness Studio 🤍
 
 		Пространство восстановления, ухода и заботы о себе.
