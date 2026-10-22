@@ -74,10 +74,21 @@ export async function handleMessage(env: Env, msg: TgMessage): Promise<void> {
 
 	if (text === "/start") {
 		await clearState(env, userId);
-		await showMainMenu(env, chatId);
-		return;
-	}
 
+		await sendPhoto(
+		env,
+		chatId,
+		"https://github.com/chichisos/aura-wellness-bot/blob/5c92fba13817ff7614578463fda013c910d90b54/5393427297198611569.jpg",
+		Добро пожаловать в AURA Wellness Studio 🤍
+
+		Пространство восстановления, ухода и заботы о себе.
+
+		Здесь вы можете посмотреть услуги, выбрать специалиста, записаться на удобное время или задать вопрос администратору.
+	);
+
+await showMainMenu(env, chatId);
+return;
+}
 	const state = await getState(env, userId);
 
 	if (state.step === "await_name") {
