@@ -70,3 +70,22 @@ export function esc(text: string): string {
 		.replace(/</g, "&lt;")
 		.replace(/>/g, "&gt;");
 }
+
+export async function sendPhoto(
+env: Env,
+chatId: number,
+photo: string,
+caption?: string,
+extra: Record<string, any> = {}
+) {
+return fetch(https://api.telegram.org/bot${env.BOT_TOKEN}/sendPhoto, {
+method: "POST",
+headers: { "Content-Type": "application/json" },
+body: JSON.stringify({
+chat_id: chatId,
+photo,
+caption,
+...extra,
+}),
+});
+}
