@@ -34,12 +34,21 @@ import { formatDateRu, isValidSlot, nextDays } from "./booking";
 import { clearState, getState, saveState } from "./state";
 import {
 	answerCallbackQuery,
-	editMessageText,
+	renderSection,
 	esc,
 	sendMessage,
 	sendPhoto,
 } from "./telegram";
+import type { InlineKeyboard } from "./keyboards";
 import type { Env, TgCallbackQuery, TgMessage } from "./types";
+
+const CATEGORY_IMAGES: Record<string, string> = {
+	massage: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611571.jpg",
+	spa: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611570.jpg",
+	face: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611573.jpg",
+	body: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611572.jpg",
+};
+const TEAM_IMAGE = "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611575.jpg";
 
 function userLabel(msg: TgMessage): string {
 	const from = msg.from;
@@ -199,21 +208,20 @@ export async function handleCallback(
 ): Promise<void> {
 	const data = cb.data ?? "";
 	const msg = cb.message;
-	if (!msg) {
+	// Acknowledge before doing KV/API work; an expired callback must not block navigation.
+	try {
 		await answerCallbackQuery(env, cb.id);
-		return;
+	} catch (error) {
+		console.error("Callback acknowledgement failed", error);
 	}
-	const chatId = msg.chat.id;
-	const messageId = msg.message_id;
+	if (!msg) return;
 	const userId = cb.from.id;
-	await answerCallbackQuery(env, cb.id);
+	const render = (text: string, keyboard: InlineKeyboard, photo?: string) =>
+		renderSection(env, msg, text, keyboard, photo);
 
 	if (data === "menu:home" || data === "menu:start") {
 		await clearState(env, userId);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			esc(WELCOME_TEXT),
 			mainMenuKeyboard(),
 		);
@@ -221,10 +229,7 @@ export async function handleCallback(
 	}
 
 	if (data === "menu:book") {
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Выберите услугу для записи:",
 			bookingServicesKeyboard(),
 		);
@@ -232,10 +237,7 @@ export async function handleCallback(
 	}
 
 	if (data === "menu:services") {
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Наши направления — выберите категорию:",
 			categoriesKeyboard(),
 		);
@@ -243,18 +245,11 @@ export async function handleCallback(
 	}
 
 	if (data === "menu:team") {
-		await sendPhoto(
-			env,
-			chatId,
-
-			"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611575.jpg"
-			);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		const photo = TEAM_IMAGE;
+		await render(
 			"Наши специалисты:",
 			specialistsKeyboard(),
+			photo,
 		);
 		return;
 	}
@@ -265,13 +260,8 @@ export async function handleCallback(
 				PROMOS.flatMap((p) => [`<b>${esc(p.title)}</b>`, esc(p.text), ""]),
 			)
 			.join("\n");
-		await sendPhoto(
-			env,
-			chatId,
-			"https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611574.jpg"
-			);
-		
-		await editMessageText(env, chatId, messageId, text, promosKeyboard());
+		const photo = "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611574.jpg";
+		await render(text, promosKeyboard(), photo);
 		return;
 	}
 
@@ -279,10 +269,7 @@ export async function handleCallback(
 		const state = await getState(env, userId);
 		state.fromPromo = true;
 		await saveState(env, userId, state);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Выберите услугу для записи по акции:",
 			bookingServicesKeyboard(),
 		);
@@ -294,10 +281,7 @@ export async function handleCallback(
 		for (const r of REVIEWS) {
 			lines.push(`<b>${esc(r.author)}</b>`, esc(r.text), "");
 		}
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			lines.join("\n"),
 			reviewsKeyboard(),
 		);
@@ -306,10 +290,7 @@ export async function handleCallback(
 
 	if (data === "reviews:leave") {
 		await saveState(env, userId, { step: "await_review" });
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Напишите ваш отзыв одним сообщением — мы передадим его администратору.",
 			cancelKeyboard(),
 		);
@@ -317,10 +298,7 @@ export async function handleCallback(
 	}
 
 	if (data === "menu:faq") {
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Частые вопросы — выберите тему:",
 			faqKeyboard(),
 		);
@@ -329,10 +307,7 @@ export async function handleCallback(
 
 	if (data === "menu:admin") {
 		await saveState(env, userId, { step: "await_admin" });
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Напишите ваш вопрос одним сообщением — администратор скоро ответит.",
 			cancelKeyboard(),
 		);
@@ -341,27 +316,11 @@ export async function handleCallback(
 
 	if (data.startsWith("cat:")) {
 		const categoryId = data.slice(4);
-		const categoryImages: Record<string, string> = {
-		massage: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611571.jpg",
-		spa: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611570.jpg",
-		face: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611573.jpg",
-		body: "https://raw.githubusercontent.com/chichisos/aura-wellness-bot/main/5393427297198611572.jpg"
-		};
-const categoryImage = categoryImages[categoryId];
+		const categoryImage = CATEGORY_IMAGES[categoryId];
 
-if (categoryImage) {
-await sendPhoto(
-env,
-chatId,
-categoryImage,
-);
-}
 		const list = servicesByCategory(categoryId);
 		if (list.length === 0) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Категория не найдена.",
 				categoriesKeyboard(),
 			);
@@ -377,12 +336,10 @@ categoryImage,
 			);
 			lines.push(esc(s.description), "");
 		}
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			lines.join("\n"),
 			servicesKeyboard(categoryId),
+			categoryImage,
 		);
 		return;
 	}
@@ -390,10 +347,7 @@ categoryImage,
 	if (data.startsWith("svc:")) {
 		const service = serviceById(data.slice(4));
 		if (!service) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Услуга не найдена.",
 				categoriesKeyboard(),
 			);
@@ -405,12 +359,10 @@ categoryImage,
 			"",
 			esc(service.description),
 		].join("\n");
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			text,
 			serviceCardKeyboard(service.id),
+			CATEGORY_IMAGES[service.category],
 		);
 		return;
 	}
@@ -418,21 +370,16 @@ categoryImage,
 	if (data.startsWith("team:")) {
 		const spec = specialistById(data.slice(5));
 		if (!spec) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Специалист не найден.",
 				specialistsKeyboard(),
 			);
 			return;
 		}
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			specialistCard(spec),
 			specialistCardKeyboard(spec.id),
+			TEAM_IMAGE,
 		);
 		return;
 	}
@@ -440,19 +387,13 @@ categoryImage,
 	if (data.startsWith("faq:")) {
 		const item = faqById(data.slice(4));
 		if (!item) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Вопрос не найден.",
 				faqKeyboard(),
 			);
 			return;
 		}
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			[`<b>${esc(item.question)}</b>`, "", esc(item.answer)].join("\n"),
 			faqAnswerKeyboard(),
 		);
@@ -463,10 +404,7 @@ categoryImage,
 	if (data.startsWith("booksvc:")) {
 		const service = serviceById(data.slice(8));
 		if (!service) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Услуга не найдена.",
 				bookingServicesKeyboard(),
 			);
@@ -483,10 +421,7 @@ categoryImage,
 			name: undefined,
 			phone: undefined,
 		});
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			`Услуга: <b>${esc(service.name)}</b>\nВыберите специалиста:`,
 			bookingSpecialistsKeyboard(),
 		);
@@ -496,10 +431,7 @@ categoryImage,
 	if (data.startsWith("bookspec:")) {
 		const spec = specialistById(data.slice(9));
 		if (!spec) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Специалист не найден.",
 				specialistsKeyboard(),
 			);
@@ -515,10 +447,7 @@ categoryImage,
 			name: undefined,
 			phone: undefined,
 		});
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			`Специалист: <b>${esc(spec.name)}</b>\nТеперь выберите услугу:`,
 			bookingServicesKeyboard(),
 		);
@@ -528,10 +457,7 @@ categoryImage,
 	if (data.startsWith("bsvc:")) {
 		const service = serviceById(data.slice(5));
 		if (!service) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Услуга не найдена.",
 				bookingServicesKeyboard(),
 			);
@@ -541,12 +467,9 @@ categoryImage,
 		state.serviceId = service.id;
 		await saveState(env, userId, state);
 		if (state.specialistId) {
-			await askDate(env, chatId, messageId);
+			await render("Выберите дату (ближайшие 5 дней):", bookingDatesKeyboard(nextDays(5)));
 		} else {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				`Услуга: <b>${esc(service.name)}</b>\nВыберите специалиста:`,
 				bookingSpecialistsKeyboard(),
 			);
@@ -558,10 +481,7 @@ categoryImage,
 		const specId = data.slice(6);
 		const spec = specialistById(specId);
 		if (!spec) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Специалист не найден.",
 				bookingSpecialistsKeyboard(),
 			);
@@ -571,12 +491,9 @@ categoryImage,
 		state.specialistId = spec.id;
 		await saveState(env, userId, state);
 		if (state.serviceId) {
-			await askDate(env, chatId, messageId);
+			await render("Выберите дату (ближайшие 5 дней):", bookingDatesKeyboard(nextDays(5)));
 		} else {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				`Специалист: <b>${esc(spec.name)}</b>\nТеперь выберите услугу:`,
 				bookingServicesKeyboard(),
 			);
@@ -587,10 +504,7 @@ categoryImage,
 	if (data.startsWith("bdate:")) {
 		const value = data.slice(6);
 		if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Выберите дату:",
 				bookingDatesKeyboard(nextDays(5)),
 			);
@@ -599,10 +513,7 @@ categoryImage,
 		const state = await getState(env, userId);
 		state.date = value;
 		await saveState(env, userId, state);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			`Дата: <b>${esc(formatDateRu(value))}</b>\nВыберите время:`,
 			bookingTimesKeyboard(),
 		);
@@ -612,10 +523,7 @@ categoryImage,
 	if (data.startsWith("btime:")) {
 		const time = data.slice(6);
 		if (!isValidSlot(time)) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Выберите время:",
 				bookingTimesKeyboard(),
 			);
@@ -625,10 +533,7 @@ categoryImage,
 		state.time = time;
 		state.step = "await_name";
 		await saveState(env, userId, state);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			`Время: <b>${esc(time)}</b>\n\nКак к вам обращаться? Напишите ваше имя.`,
 			cancelKeyboard(),
 		);
@@ -647,10 +552,7 @@ categoryImage,
 			!state.name ||
 			!state.phone
 		) {
-			await editMessageText(
-				env,
-				chatId,
-				messageId,
+			await render(
 				"Данные записи неполные. Начнём заново:",
 				bookingServicesKeyboard(),
 			);
@@ -663,10 +565,7 @@ categoryImage,
 			[cb.from.first_name, cb.from.last_name].filter(Boolean).join(" ") ||
 			state.name;
 
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			[
 				"Запись подтверждена ✓",
 				"",
@@ -697,10 +596,7 @@ categoryImage,
 
 	if (data === "book:cancel") {
 		await clearState(env, userId);
-		await editMessageText(
-			env,
-			chatId,
-			messageId,
+		await render(
 			"Запись отменена. Чем ещё помочь?",
 			mainMenuKeyboard(),
 		);
@@ -708,10 +604,7 @@ categoryImage,
 	}
 
 	// Неизвестный callback — возвращаем в меню.
-	await editMessageText(
-		env,
-		chatId,
-		messageId,
+	await render(
 		esc(WELCOME_TEXT),
 		mainMenuKeyboard(),
 	);
@@ -727,20 +620,6 @@ function specialistCard(spec: {
 	if (spec.experience) lines.push(esc(spec.experience));
 	lines.push("", esc(spec.about));
 	return lines.join("\n");
-}
-
-async function askDate(
-	env: Env,
-	chatId: number,
-	messageId: number,
-): Promise<void> {
-	await editMessageText(
-		env,
-		chatId,
-		messageId,
-		"Выберите дату (ближайшие 5 дней):",
-		bookingDatesKeyboard(nextDays(5)),
-	);
 }
 
 async function showBookingPreview(

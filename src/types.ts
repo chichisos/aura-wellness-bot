@@ -38,6 +38,8 @@ export interface TgChat {
 }
 
 export interface TgMessage {
+	photo?: { file_id: string }[];
+	caption?: string;
 	message_id: number;
 	chat: TgChat;
 	from?: TgUser;
